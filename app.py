@@ -9,26 +9,37 @@ st.set_page_config(page_title="Emotion in Motion", page_icon="🎨", layout="wid
 st.title("🎨 Emotion in Motion — The Algorithmic Soul")
 st.caption("Generative art that reacts to your body & mood, with AI titles and statements.")
 
-# --- OpenAI API key (session-safe) ---
+# ---------- OpenAI API key (no-rerun, version-safe) ----------
 import os
+import streamlit as st
 
 if "api_key" not in st.session_state:
     st.session_state.api_key = st.secrets.get("OPENAI_API_KEY", None)
 
 with st.expander("🔑 Enter your OpenAI API Key", expanded=not bool(st.session_state.api_key)):
-    st.markdown("You can get one from [OpenAI API](https://platform.openai.com/account/api-keys). "
-                "The key is used in-session only.")
-    key_input = st.text_input("Paste your API Key here:", type="password")
-    if key_input:
-        st.session_state.api_key = key_input.strip()
-        os.environ["OPENAI_API_KEY"] = st.session_state.api_key  # let SDK read from env
-        st.experimental_rerun()  # <<< use this instead of st.rerun()
+    st.markdown(
+        "You can get one from [OpenAI API](https://platform.openai.com/account/api-keys). "
+        "The key is used in-session only."
+    )
+    # 用单独的输入框 key，避免状态错乱
+    key_input = st.text_input("Paste your API Key here:", type="password", key="__api_input")
+    save = st.button("Save API Key", use_container_width=True)
+    if save:
+        if key_input:
+            st.session_state.api_key = key_input.strip()
+            os.environ["OPENAI_API_KEY"] = st.session_state.api_key
+            st.success("API key saved. You can close this panel.")
+        else:
+            st.warning("Please paste a valid API key.")
 
+# 没有 key 就不往下跑
 if not st.session_state.api_key:
     st.stop()
 
+# 双保险：放到环境变量，供 openai SDK 自动读取
+os.environ["OPENAI_API_KEY"] = st.session_state.api_key
 api_key = st.session_state.api_key
-os.environ["OPENAI_API_KEY"] = api_key  # double-safety
+
 
 
 # ================= Sidebar (much richer) =================
